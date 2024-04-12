@@ -194,12 +194,27 @@ nav h1{
   gap: 8px;
   flex-wrap: wrap;
 }
-.Msg-success{
+.Msg-success {
   display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 150px;
+  background-color: #ba2626;
+  color: white;
+  padding: 8px;
+  border-radius: 4px;
+}
+.Msg-success1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   width: 150px;
   color: white;
-  background-color: rgb(186, 38, 38);
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #6cd21e; 
 }
 .Logdiv form input, .Form input {
   display: flex;

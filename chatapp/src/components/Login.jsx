@@ -44,22 +44,20 @@ const Login = () => {
           type="text"
           value={Email}
           onChange={(e) => setEmail(e.target.value)}
-          required
         />
         <label>Password:</label>
         <input
           type="password"
           value={Password}
           onChange={(e) => setPassword(e.target.value)}
-          required
         />
         {Log && (
           <div className="Msg-success">
             <span>{Msg}</span>
           </div>
         )}
-        <button type="submit" id="Lbt">
-          Login
+        <button type="submit" id="Lbt" onClick={handleLogin}>
+          Login 
         </button>
       </form>
     </div>

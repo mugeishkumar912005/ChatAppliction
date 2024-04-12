@@ -13,23 +13,37 @@ const Sign = () => {
   const HandleSignup = async (e) => {
     e.preventDefault();
     try {
-      if (Password.trim() !== conP.trim()) {
-        setMsg("Passwords don't match");
-      } else if (!Username || !Phone_no || !Email || !Password) {
+      if (!Username.trim() || !Phone_no.trim() || !Email.trim() || !Password.trim()) {
         setMsg("Please fill in all fields");
-      } else {
-        await axios.post("http://localhost:5500/AddUser", {
-          Username,
-          Phone_no,
-          Email,
-          Password,
-        });
+        return;
+      }
+      
+      if (Password!=conP) {
+        setMsg("Passwords don't match");
+        return;
+      }
+
+      const response = await axios.post("http://localhost:5500/AddUser", {
+        Username,
+        Phone_no,
+        Email,
+        Password,
+      });
+      
+      if (response.status === 200) {
         setLog(true);
         setMsg("Added successfully!");
+        setName("");
+        setPh("");
+        setEmail("");
+        setPass("");
+        setP("");
+      } else {
+        setMsg("Failed to add user");
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Oops! Can't Add");
+      setMsg("Failed to add user");
     }
   };
 
@@ -47,7 +61,6 @@ const Sign = () => {
                 type="text"
                 id="username"
                 name="username"
-                required
               />
               <label>Phone_no:</label>
               <input
@@ -56,7 +69,6 @@ const Sign = () => {
                 type="number"
                 id="ph"
                 name="username"
-                required
               />
               <label>Email:</label>
               <input
@@ -65,7 +77,6 @@ const Sign = () => {
                 type="email"
                 id="email"
                 name="email"
-                required
               />
               <label>Password:</label>
               <input
@@ -74,7 +85,6 @@ const Sign = () => {
                 type="password"
                 id="password"
                 name="password"
-                required
               />
               <label>Confirm Password:</label>
               <input
@@ -83,9 +93,8 @@ const Sign = () => {
                 type="password"
                 id="confirmPassword"
                 name="confirmPassword"
-                required
               />
-              {Log && <div className="Msg-success">{Msg}</div>}
+              {Log && <div className={Msg === "Added successfully!" ? "Msg-success1" : "Msg-success"}>{Msg}</div>}
               <button id="submit" onClick={HandleSignup}>
                 Sign Up
               </button>
