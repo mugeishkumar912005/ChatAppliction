@@ -194,7 +194,13 @@ nav h1{
   gap: 8px;
   flex-wrap: wrap;
 }
-
+.Msg-success{
+  display: flex;
+  text-align: center;
+  width: 150px;
+  color: white;
+  background-color: rgb(186, 38, 38);
+}
 .Logdiv form input, .Form input {
   display: flex;
   justify-content: center;
