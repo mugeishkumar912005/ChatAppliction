@@ -12,12 +12,12 @@ const Mod = new M.Schema({
     },
     Email: {
         type: String,
-        unique: true,
+        unique:[true,"Email Alredy exist"],
         required: true
     },
     Password: {
         type: String,
         required: true,
     }
-});
+},{ timestamps: true });
 module.exports = { Mod };

@@ -18,7 +18,7 @@ const Sign = () => {
         return;
       }
       
-      if (Password!=conP) {
+      else if (Password !== conP) {
         setMsg("Passwords don't match");
         return;
       }
@@ -94,7 +94,7 @@ const Sign = () => {
                 id="confirmPassword"
                 name="confirmPassword"
               />
-              {Log && <div className={Msg === "Added successfully!" ? "Msg-success1" : "Msg-success"}>{Msg}</div>}
+              {Msg && <div className={Msg === "Added successfully!" ? "Msg-success1" : "Msg-success"}>{Msg}</div>}
               <button id="submit" onClick={HandleSignup}>
                 Sign Up
               </button>
