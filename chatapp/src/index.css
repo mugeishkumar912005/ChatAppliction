@@ -200,10 +200,10 @@ nav h1{
   justify-content: center;
   text-align: center;
   width: 150px;
-  background-color: #ba2626;
   color: white;
   padding: 8px;
   border-radius: 4px;
+  background-color: red;
 }
 .Msg-success1 {
   display: flex;

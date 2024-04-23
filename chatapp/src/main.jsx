@@ -16,7 +16,7 @@ const routes = [
       { path: 'home', element: <Home /> },
       { path: 'Login', element: <Login /> },
       { path: 'SignUp', element: <Sign/> },
-      { path: 'MsgDiv', element: <MsgDiv /> }
+      { path: 'MsgDiv', element: <MsgDiv /> },
     ]
   }
 ];

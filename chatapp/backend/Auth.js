@@ -1,29 +1,41 @@
-const M = require('mongoose');
-const B = require('body-parser');
-const Ex = require('express');
-const C = require('cors');
-const jwt=require('jsonwebtoken')
-const bcrypt = require('bcrypt'); 
-const { Mod } = require('./Uschema.js');
-const {verifyToken}=require("./middleware/verifytocken.js")
-const User = M.model('User', Mod);
-const App = Ex();
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const bcrypt = require('bcrypt');
+const dotenv = require('dotenv');
+const protectRoute = require('./middleware/protectRoute.js');
+const { Mod } = require("./Uschema.js");
+const { MsgSchema } = require("./msgSchenma.js");
+const { ConvoSchema } = require("./cnvoSchem.js");
+const generateToken = require('./middleware/verifytocken.js');
+const mongoose = require('mongoose');
 
-App.use(B.json());
-App.use(C());
+dotenv.config();
+const app = express();
+app.use(bodyParser.json());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}));
 
-const DbConnection = async (e) => {
+app.use(cookieParser());
+
+const DbConnection = async () => {
     try {
-        await M.connect('mongodb+srv://kmugeis2005:dontforgetit@mugeishhero.ggr3iod.mongodb.net/KeepintouchUserDb?retryWrites=true&w=majority&appName=mugeishhero');
+        await mongoose.connect('mongodb+srv://kmugeis2005:dontforgetit@mugeishhero.ggr3iod.mongodb.net/KeepintouchUserDb?retryWrites=true&w=majority&AppName=mugeishhero');
         console.log("DB Connection Success");
     } catch (error) {
-        console.log("Opps!Server Error:" + error);
+        console.log("Oops! Server Error: " + error);
     }
 }
-
 DbConnection();
 
-App.post('/AddUser', async (request, response) => {
+const User = mongoose.model('User', Mod);
+const Msge = mongoose.model('msgs', MsgSchema);
+const Convo = mongoose.model('convo', ConvoSchema);
+
+app.post('/AddUser', async (request, response) => {
     try {
         const { Username, Phone_no, Email, Password } = request.body;
         const hashedPassword = await bcrypt.hash(Password, 10);
@@ -34,35 +46,134 @@ App.post('/AddUser', async (request, response) => {
         });
     } catch (error) {
         console.error("Error:", error);
-        response.status(404).json({
+        response.status(500).json({
             "Msg": "Oops! Something Went Wrong"
         });
     }
 });
-App.post('/Login', verifyToken ,async (request, response) => {
+app.post('/Login', async (request, response) => {
     try {
-        const {Email, Password } = request.body;
-        const exUser = await User.findOne({ "Email": Email });
-        if (!exUser) {
-            return response.status(401).json({ "error": "User not found. Please sign up." });
+        const { Email, Password } = request.body;
+        if (!Email || !Password) {
+            return response.status(400).json({ message: 'Missing required fields: Email or Password' });
         }
-        const isPasswordMatch = await bcrypt.compare(Password, exUser.Password);
-        if (!isPasswordMatch) {
-            return response.status(401).json({ "error": "Invalid password." });
+
+        const user = await User.findOne({ Email });
+        if (!user) {
+            return response.status(401).json({ message: 'Invalid email or password' });
         }
-        let Token = jwt.sign({ id: exUser._id }, "secretKey");
+
+        const isMatch = await bcrypt.compare(Password, user.Password);
+        if (!isMatch) {
+            return response.status(401).json({ message: 'Invalid email or password' });
+        }
+        const token = generateToken(Email);
+        response.cookie("JWT", token, {
+            maxAge: 1 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            sameSite: "strict",
+        });
+        return response.status(200).json({
+            message: 'Login successful!',
+            token,
+            user: {
+                name: user.Email,
+            },
+        });
+    } catch (err) {
+        console.error(err);
+        response.status(500).json({ message: 'Server error' });
+    }
+});
+app.get("/Logout", async (request, response) => {
+    try {
+        response.clearCookie("JWT");
         response.status(200).json({
-            "msg": "Login successful",
-            data: exUser,
-            Token: Token
+            Msg: "Logged out successfully!"
         });
     } catch (error) {
-        console.error("Error:", error);
-        response.status(500).json({ "error": "Internal server error" });
+        console.error(error);
+        response.status(500).json({
+            Msg: "Something went wrong"
+        });
     }
 });
 
-const PORT = process.env.PORT || 5500;
-App.listen(PORT, () => {
-    console.log(`Server Connected in ${PORT}`);
+app.post("/MsgSend/:id", protectRoute, async (request, response) => {
+  try {
+      const { Msg } = request.body;
+      const { id } = request.params;
+      const senderId = request.user._id;
+      
+      let conversation = await Convo.findOne({
+          participants: { $all: [senderId, id] }
+      });
+      
+      if (!conversation) {
+          conversation = await Convo.create({
+              participants: [senderId, id],
+          });
+      }
+      
+      const newMsg = new Msge({
+          senderId,
+          resId: id,
+          Msg: request.body.Msg
+      });
+      
+      await newMsg.save(); 
+      
+      if (newMsg) {
+          conversation.Msg.push(newMsg._id);
+      }
+      
+      response.status(201).json({
+          Msg: newMsg
+      });
+  } catch (error) {
+      response.status(500).json({
+          Msg: "Error: " + error,
+      });
+  }
 });
+app.get("/recMsg/:id", protectRoute, async (request, response) => {
+  try {
+      const { id: chatingid } = request.params;
+      const senderId = request.user._id;
+
+      let conversation = await Convo.findOne({
+          participants: { $all: [senderId, chatingid] }
+      }).populate("MsgSchema");
+
+      if (!conversation) {
+          return response.status(404).json({
+              Msg: "Conversation not found",
+          });
+      }
+
+      response.status(200).json({
+          Msg: conversation.Msg,
+      });
+  } catch (error) {
+      response.status(500).json({
+          Msg: "Server Error",
+      });
+  }
+});
+app.get("/", protectRoute, async (request, response) => {
+  try {
+    const LoggedInUserId = request.user._id;
+    const allUsersExceptLoggedIn = await User.find({ _id: { $ne: LoggedInUserId } }).select('-Password -Phone_no -Email');
+    response.status(200).json({
+      All: allUsersExceptLoggedIn,
+      Msg: "Good Job!"
+    });
+  } catch (error) {
+    response.status(500).json({
+      Msg: "Server Error"
+    });
+  }
+});
+
+const port = process.env.PORT || 5500;
+app.listen(port, () => console.log(`Server listening on port ${port}`));

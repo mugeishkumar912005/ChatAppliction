@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import axios from "axios";
-
 const Sign = () => {
   const [Username, setName] = useState("");
   const [Phone_no, setPh] = useState("");
@@ -16,9 +15,7 @@ const Sign = () => {
       if (!Username.trim() || !Phone_no.trim() || !Email.trim() || !Password.trim()) {
         setMsg("Please fill in all fields");
         return;
-      }
-      
-      else if (Password !== conP) {
+      } else if (Password !== conP) {
         setMsg("Passwords don't match");
         return;
       }
@@ -29,7 +26,7 @@ const Sign = () => {
         Email,
         Password,
       });
-      
+
       if (response.status === 200) {
         setLog(true);
         setMsg("Added successfully!");

@@ -1,39 +1,48 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import Cookies from "js-cookie"; 
 
 const Login = () => {
   const [Email, setEmail] = useState("");
-  const [Password, setPassword] = useState("");
-  const [Msg, setMsg] = useState("");
+  const [Password, setPassword] = useState(""); 
+  const [msg, setMsg] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      console.log("Email:", Email);
+      console.log("Password:", Password);
       if (!Email || !Password) {
         setMsg("Fill in both Email and Password fields");
       } else {
         const response = await axios.post("http://localhost:5500/Login", {
-          Email,
-          Password,
+          Email: Email,
+          Password: Password,
         });
+  
+        console.log("Login response:", response);
+  
         if (response.status === 200) {
-          const expires = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
-          document.cookie = `token=${response.data.Token}; expires=${expires.toUTCString()}; path=/`;
-          navigate('/MsgDiv');
+          if (response.data.message === "Login successful!") {
+            setMsg("");
+            const token = response.data.token;
+            Cookies.set("token", token, { expires: 1 });
+            console.log("Token cookie:", Cookies.get("token"));
+            navigate("/MsgDiv");
+          } else {
+            setMsg(response.data.message || "Login failed.");
+          }
+        } else {
+          setMsg("An unexpected error occurred. Please try again later.");
         }
       }
     } catch (error) {
-      if (error.response && error.response.status === 401) {
-        setMsg("Invalid email or password. Please Sign up.");
-      } else {
-        console.error("Something went wrong:", error);
-        setMsg("An unexpected error occurred. Please try again later.");
-      }
+      console.error("Something went wrong:", error);
+      setMsg("An unexpected error occurred. Please try again later.");
     }
   };
-  
   return (
     <div className="Logdiv">
       <h1>Login</h1>
@@ -47,16 +56,16 @@ const Login = () => {
         <label>Password:</label>
         <input
           type="password"
-          value={Password}
+          value={Password} 
           onChange={(e) => setPassword(e.target.value)}
         />
-        {Msg && (
+        {msg && (
           <div className="Msg-success">
-            <span>{Msg}</span>
+            <span>{msg}</span>
           </div>
         )}
         <button type="submit" id="Lbt">
-          Login 
+          Login
         </button>
       </form>
     </div>
