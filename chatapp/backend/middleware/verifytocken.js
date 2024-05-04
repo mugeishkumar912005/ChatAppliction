@@ -5,8 +5,8 @@ const generateToken = (Email) => {
     const token = JWT.sign({ Email }, "Y+88p4NldTYqVNWLSVKODcprx0g59PackkQWqGwxow0=", {
         expiresIn: '1d',
     });
-    console.log("Token:", token);
-    return token; 
+    console.log("Generated Token:", token); // Add this line to log the generated token
+    return token;
 }
 
 module.exports = generateToken;

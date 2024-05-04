@@ -1,48 +1,53 @@
+// Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import Cookies from "js-cookie"; 
+import Cookies from "js-cookie";
 
 const Login = () => {
   const [Email, setEmail] = useState("");
-  const [Password, setPassword] = useState(""); 
+  const [Password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      console.log("Email:", Email);
-      console.log("Password:", Password);
       if (!Email || !Password) {
         setMsg("Fill in both Email and Password fields");
-      } else {
-        const response = await axios.post("http://localhost:5500/Login", {
-          Email: Email,
-          Password: Password,
-        });
-  
-        console.log("Login response:", response);
-  
-        if (response.status === 200) {
-          if (response.data.message === "Login successful!") {
-            setMsg("");
-            const token = response.data.token;
-            Cookies.set("token", token, { expires: 1 });
-            console.log("Token cookie:", Cookies.get("token"));
-            navigate("/MsgDiv");
-          } else {
-            setMsg(response.data.message || "Login failed.");
-          }
+        return;
+      }
+
+      console.log("Login request: ", Email, Password); // Debug log
+
+      const response = await axios.post("http://localhost:5500/Login", {
+        Email,
+        Password,
+      });
+
+      console.log("Login response:", response.data); // Debug log
+
+      if (response.status === 200) {
+        const data = response.data;
+        if (data && data.message === "Login successful!") {
+          setMsg("");
+          const token = data.token;
+          Cookies.set("JWT", token, { expires: 1 }); // Consider a more secure expiration
+          console.log("JWT token:", token); // Debug log
+
+          navigate("/MsgDiv", { state: { token } }); // Pass token as state
         } else {
-          setMsg("An unexpected error occurred. Please try again later.");
+          setMsg(data.message || "Login failed.");
         }
+      } else {
+        setMsg("An unexpected error occurred. Please try again later.");
       }
     } catch (error) {
-      console.error("Something went wrong:", error);
+      console.error("Error:", error.response.data);
       setMsg("An unexpected error occurred. Please try again later.");
     }
   };
+
   return (
     <div className="Logdiv">
       <h1>Login</h1>
@@ -56,7 +61,7 @@ const Login = () => {
         <label>Password:</label>
         <input
           type="password"
-          value={Password} 
+          value={Password}
           onChange={(e) => setPassword(e.target.value)}
         />
         {msg && (

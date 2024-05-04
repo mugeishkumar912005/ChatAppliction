@@ -8,7 +8,7 @@ const Sign = () => {
   const [conP, setP] = useState("");
   const [Msg, setMsg] = useState("");
   const [Log, setLog] = useState(false);
-
+  const [image,setProf]=useState()
   const HandleSignup = async (e) => {
     e.preventDefault();
     try {
@@ -25,6 +25,7 @@ const Sign = () => {
         Phone_no,
         Email,
         Password,
+        image,
       });
 
       if (response.status === 200) {
@@ -91,6 +92,8 @@ const Sign = () => {
                 id="confirmPassword"
                 name="confirmPassword"
               />
+              <label>Image:</label>
+              <input type="file" value={image} onChange={(e) => setProf(e.target.value)}></input>
               {Msg && <div className={Msg === "Added successfully!" ? "Msg-success1" : "Msg-success"}>{Msg}</div>}
               <button id="submit" onClick={HandleSignup}>
                 Sign Up

@@ -18,6 +18,10 @@ const Mod = new M.Schema({
     Password: {
         type: String,
         required: true,
+    },
+    image:{
+        type:String,
+        required:false,
     }
 },{ timestamps: true });
 module.exports = { Mod };

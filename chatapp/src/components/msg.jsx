@@ -1,32 +1,91 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import dots from "./images/dots.png";
-import dog from "./images/dog.webp";
-import aud from "./images/phone-call.png";
-import Vid from "./images/video.png";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import Cookies from "js-cookie";
-
+import chatbg from './images/chatbg.jpg'
+import phonecall from "./images/phonecall.png"
+import video from"./images/video.png"
 const MsgDiv = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
   const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const token = location.state?.token;
 
   useEffect(() => {
-    const token = Cookies.get("token");
-    console.log(token);
     if (!token) {
-      navigate("/MsgDiv");
-    } else {
-      axios.get('http://localhost:5500/', { headers: { Authorization: `Bearer ${token}` } })
-        .then(response => {
-          setUsers(response.data.All);
-        })
-        .catch(error => {
-          console.error('Error fetching users:', error);
-        });
+      navigate("/Home");
+      return;
     }
-  }, [navigate]);
+
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get('http://localhost:5500/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        });
+        setUsers(response.data.All);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUsers();
+  }, [navigate, token]);
+
+  const handleSelectUser = (user) => {
+    setSelectedUser(user);
+    fetchChatHistory(user._id);
+  };
+
+  const fetchChatHistory = async (userId) => {
+    try {
+      const response = await axios.get(`http://localhost:5500/recMsg/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setMessages(response.data.Msg);
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!selectedUser || !newMessage.trim()) {
+      console.warn('Please select a user and type a message');
+      return;
+    }
+
+    try {
+      const response = await axios.post(`http://localhost:5500/MsgSend/${selectedUser._id}`, {
+        Msg: newMessage.trim(),
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setMessages([...messages, response.data.Msg]);
+      setNewMessage("");
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+  const lout=()=>{
+    const loutM=axios.get("http://localhost:5500/Logout");
+    if(loutM){
+      navigate('/Home')
+    }
+  }
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  };
 
   return (
     <div className="chat-container">
@@ -34,18 +93,20 @@ const MsgDiv = () => {
         <div className="nav">
           <nav>
             <h1>Keep in Touch</h1>
-            <button id="set" onClick={() => setShowSettings(!showSettings)}>
-              <img src={dots} alt="" width="40px" />
-            </button>
           </nav>
+          <button id="set" onClick={() => setShowSettings(!showSettings)}>
+              <img src="./images/dots.png" alt="" width="100px" />
+            </button>
+          <button id="logout" onClick={lout}>Logout</button>
         </div>
         <div className="list">
           <ul>
             {users.map((user, index) => (
-              <li key={index} className="cont">
-                <img src={dog} alt="" />
+              <li key={index} className={`cont ${selectedUser && selectedUser._id === user._id ? 'active' : ''}`} onClick={() => handleSelectUser(user)}>
+                <img src="./images/dog.webp" alt="" />
                 <div className="name">
-                  <span>{user.Username}</span>
+                  <h3>{user.Username}</h3>
+                  <h6>{user.Phone_no}</h6>
                 </div>
               </li>
             ))}
@@ -65,41 +126,51 @@ const MsgDiv = () => {
         </div>
       </div>
       <div className="right-chat">
-        <div className="container">
-          <div className="navR">
-            <div className="prop">
-              <div className="profIm">
-                <img src={dog} alt="" id="prof" width="50px" />
+        {selectedUser ? (
+          <div className="container">
+            <div className="navR">
+              <div className="prop">
+                <div className="profIm">
+                  {selectedUser.image}
+                </div>
+                <div className="name">
+                  <span>
+                    <h2>{selectedUser.Username}</h2>
+                  </span>
+                </div>
               </div>
-              <div className="name">
-                <span>
-                  <h2 id="name" color="black">
-                    Subramani
-                  </h2>
-                </span>
+              <div className="contact">
+                <button><img src={phonecall} width="30px" alt="" className="cont"/></button>
+                <button><img src={video} width="30px" alt="" className="cont"/></button>
               </div>
             </div>
+            <div className="chat-box">
+              <ul>
+                {messages.map((message, index) => (
+                  <li key={index} className={message.fromMe ? "you" : "other"}>
+                    {message.content}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="input-container">
+              <input
+                type="text"
+                className="input-field"
+                id="messageInput"
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+              />
+              <button className="send-button" onClick={sendMessage}>
+                Send
+              </button>
+            </div>
           </div>
-          <div className="contact">
-            <button id="aud">
-              <img src={aud} alt="" width="30px" />
-            </button>
-            <button id="vid">
-              <img src={Vid} alt="" width="30px" />
-            </button>
-          </div>
-        </div>
-        <div className="input-container">
-          <input
-            type="text"
-            className="input-field"
-            id="messageInput"
-            placeholder="Type a message..."
-          />
-          <button className="send-button">
-            Send
-          </button>
-        </div>
+        ) : (
+          <div className="no-chat">Select a user to start chatting.</div>
+        )}
       </div>
     </div>
   );

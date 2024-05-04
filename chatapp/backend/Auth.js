@@ -15,9 +15,11 @@ dotenv.config();
 const app = express();
 app.use(bodyParser.json());
 app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-}));
+    origin: 'http://localhost:5175', // Allow requests from this origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow these HTTP methods
+    allowedHeaders: ['authorization', 'Content-Type'], // Allow these headers in requests
+    credentials: true, // Allow credentials (e.g., cookies)
+  }));
 
 app.use(cookieParser());
 
@@ -37,9 +39,9 @@ const Convo = mongoose.model('convo', ConvoSchema);
 
 app.post('/AddUser', async (request, response) => {
     try {
-        const { Username, Phone_no, Email, Password } = request.body;
+        const { Username, Phone_no, Email, Password,image } = request.body;
         const hashedPassword = await bcrypt.hash(Password, 10);
-        const newUser = await User.create({ 'Username': Username, 'Phone_no': Phone_no, 'Email': Email, 'Password': hashedPassword });
+        const newUser = await User.create({ 'Username': Username, 'Phone_no': Phone_no, 'Email': Email, 'Password': hashedPassword,"image":image });
         response.status(200).json({
             'Msg': "Successful Addition",
             newUser
@@ -51,7 +53,7 @@ app.post('/AddUser', async (request, response) => {
         });
     }
 });
-app.post('/Login', async (request, response) => {
+app.post('/Login',async (request, response) => {
     try {
         const { Email, Password } = request.body;
         if (!Email || !Password) {
@@ -75,7 +77,7 @@ app.post('/Login', async (request, response) => {
         });
         return response.status(200).json({
             message: 'Login successful!',
-            token,
+            token, 
             user: {
                 name: user.Email,
             },
@@ -85,6 +87,7 @@ app.post('/Login', async (request, response) => {
         response.status(500).json({ message: 'Server error' });
     }
 });
+
 app.get("/Logout", async (request, response) => {
     try {
         response.clearCookie("JWT");
@@ -100,47 +103,50 @@ app.get("/Logout", async (request, response) => {
 });
 
 app.post("/MsgSend/:id", protectRoute, async (request, response) => {
-  try {
+    try {
       const { Msg } = request.body;
       const { id } = request.params;
       const senderId = request.user._id;
       
       let conversation = await Convo.findOne({
-          participants: { $all: [senderId, id] }
+        participants: { $all: [senderId, id] }
       });
       
       if (!conversation) {
-          conversation = await Convo.create({
-              participants: [senderId, id],
-          });
+        conversation = await Convo.create({
+          participants: [senderId, id],
+          Msg: [] // Ensure Msg field exists even if it's initially empty
+        });
       }
       
       const newMsg = new Msge({
-          senderId,
-          resId: id,
-          Msg: request.body.Msg
+        senderId,
+        resId: id,
+        Msg: request.body.Msg
       });
       
-      await newMsg.save(); 
+      await newMsg.save();
       
-      if (newMsg) {
-          conversation.Msg.push(newMsg._id);
-      }
+      // Push the new message to the conversation's Msg array
+      conversation.Msg.push(newMsg._id);
+      await conversation.save(); // Save the updated conversation
       
       response.status(201).json({
-          Msg: newMsg
+        Msg: newMsg
       });
-  } catch (error) {
+    } catch (error) {
       response.status(500).json({
-          Msg: "Error: " + error,
+        Msg: "Error: " + error,
       });
-  }
-});
+    }
+  });
+  
 app.get("/recMsg/:id", protectRoute, async (request, response) => {
   try {
       const { id: chatingid } = request.params;
       const senderId = request.user._id;
-
+      console.log(chatingid)
+      console.log(senderId)
       let conversation = await Convo.findOne({
           participants: { $all: [senderId, chatingid] }
       }).populate("MsgSchema");
@@ -157,23 +163,23 @@ app.get("/recMsg/:id", protectRoute, async (request, response) => {
   } catch (error) {
       response.status(500).json({
           Msg: "Server Error",
+      }); 
+  }
+});
+app.get("/",protectRoute, async (request, response) => {
+    try {
+      const LoggedInUserId = request.user._id;
+      const allUsersExceptLoggedIn = await User.find({ _id: { $ne: LoggedInUserId } }).select('-Password');
+      response.status(200).json({
+        All: allUsersExceptLoggedIn,
+        Msg: "Good Job!"
       });
-  }
-});
-app.get("/", protectRoute, async (request, response) => {
-  try {
-    const LoggedInUserId = request.user._id;
-    const allUsersExceptLoggedIn = await User.find({ _id: { $ne: LoggedInUserId } }).select('-Password -Phone_no -Email');
-    response.status(200).json({
-      All: allUsersExceptLoggedIn,
-      Msg: "Good Job!"
-    });
-  } catch (error) {
-    response.status(500).json({
-      Msg: "Server Error"
-    });
-  }
-});
+    } catch (error) {
+      response.status(500).json({
+        Msg: "Server Error"
+      });
+    }
+  });
 
 const port = process.env.PORT || 5500;
 app.listen(port, () => console.log(`Server listening on port ${port}`));
