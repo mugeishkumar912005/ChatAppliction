@@ -1,15 +1,13 @@
-const M = require('mongoose');
-
-const ConvoSchema = new M.Schema({
-    Participants: [{
-        type: M.Schema.Types.ObjectId,
-        ref: "User"
+const mongoose = require('mongoose');
+const { MsgSchema } = require('./msgSchenma');
+const { Schema } = mongoose;
+const convoSchema = new Schema({
+    participants: [{
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: true
     }],
-    Msg: [{
-        type: M.Schema.Types.ObjectId,
-        ref: "MsgSchema",
-        default: []
-    }]
+    messages: [MsgSchema]
 }, { timestamps: true });
 
-module.exports = { ConvoSchema };
+module.exports = {convoSchema};

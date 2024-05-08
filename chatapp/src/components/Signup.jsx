@@ -8,7 +8,6 @@ const Sign = () => {
   const [conP, setP] = useState("");
   const [Msg, setMsg] = useState("");
   const [Log, setLog] = useState(false);
-  const [image,setProf]=useState()
   const HandleSignup = async (e) => {
     e.preventDefault();
     try {
@@ -25,7 +24,6 @@ const Sign = () => {
         Phone_no,
         Email,
         Password,
-        image,
       });
 
       if (response.status === 200) {
@@ -57,7 +55,6 @@ const Sign = () => {
                 value={Username}
                 onChange={(e) => setName(e.target.value)}
                 type="text"
-                id="username"
                 name="username"
               />
               <label>Phone_no:</label>
@@ -65,7 +62,6 @@ const Sign = () => {
                 value={Phone_no}
                 onChange={(e) => setPh(e.target.value)}
                 type="number"
-                id="ph"
                 name="username"
               />
               <label>Email:</label>
@@ -73,7 +69,6 @@ const Sign = () => {
                 value={Email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
-                id="email"
                 name="email"
               />
               <label>Password:</label>
@@ -81,7 +76,6 @@ const Sign = () => {
                 value={Password}
                 onChange={(e) => setPass(e.target.value)}
                 type="password"
-                id="password"
                 name="password"
               />
               <label>Confirm Password:</label>
@@ -89,13 +83,10 @@ const Sign = () => {
                 value={conP}
                 onChange={(e) => setP(e.target.value)}
                 type="password"
-                id="confirmPassword"
                 name="confirmPassword"
               />
-              <label>Image:</label>
-              <input type="file" value={image} onChange={(e) => setProf(e.target.value)}></input>
               {Msg && <div className={Msg === "Added successfully!" ? "Msg-success1" : "Msg-success"}>{Msg}</div>}
-              <button id="submit" onClick={HandleSignup}>
+              <button id="Lbt" onClick={HandleSignup}>
                 Sign Up
               </button>
             </div>

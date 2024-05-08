@@ -1,8 +1,9 @@
 {
-  "name": "backend",
+  "name": "chatapp", 
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "proxy": "http://localhost:5500",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx nodemon Auth.js"

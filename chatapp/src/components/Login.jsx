@@ -43,7 +43,7 @@ const Login = () => {
         setMsg("An unexpected error occurred. Please try again later.");
       }
     } catch (error) {
-      console.error("Error:", error.response.data);
+      console.error("Error:", error);
       setMsg("An unexpected error occurred. Please try again later.");
     }
   };
