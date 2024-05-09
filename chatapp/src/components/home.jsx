@@ -13,7 +13,7 @@ const Home = () => {
                     alignItems="center"
                     p={3}
                     textAlign="center"
-                    bg="#6cd21e"
+                    bg="#0d84bf"
                     color="white"
                     borderRadius="10px"
                     borderWidth="1px"

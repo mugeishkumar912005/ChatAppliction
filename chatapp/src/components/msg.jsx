@@ -18,7 +18,21 @@ const MsgDiv = () => {
   const token = location.state?.token;
   const typingTimeout = useRef(null);
   const isTyping = useRef(false);
-
+  
+  const fetchChatHistory = async (userId) => {
+    try {
+      const response = await axios.get(`http://localhost:5500/recMsg/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
+      setMessages(response.data.messages); 
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+    }
+  };
+  
   useEffect(() => {
     if (!token) {
       navigate("/Home");
@@ -39,57 +53,42 @@ const MsgDiv = () => {
     };
   }, [navigate, token]);
 
-  useEffect(() => {
-    if (!token) {
-      return;
-    }
-
-    const fetchUsers = async () => {
-      try {
-        const response = await axios.get('http://localhost:5500/', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        });
-        setUsers(response.data.All);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
-
-    fetchUsers();
-  }, [token]);
-
-  const handleSelectUser = (user) => {
-    setSelectedUser(user);
-    fetchChatHistory(user._id);
-  };
-
-  const fetchChatHistory = async (userId) => {
+  // useEffect(() => {
+  //   if (!token) {
+  //     return;
+  //   }
+  // }, [token]);
+  const fetchUsers = async () => {
     try {
-      const response = await axios.get(`http://localhost:5500/recMsg/${userId}`, {
+      const response = await axios.get('http://localhost:5500/', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
         withCredentials: true,
       });
-      setMessages(response.data.messages); // Corrected field name
+      setUsers(response.data.All);
     } catch (error) {
-      console.error('Error fetching chat history:', error);
+      console.error('Error fetching users:', error);
     }
   };
+
+  fetchUsers();
+  const handleSelectUser = (user) => {
+    setSelectedUser(user);
+    fetchChatHistory(user._id);
+  };
+ 
 
   const sendMessage = async () => {
     if (!selectedUser || !newMessage.trim() || !socket.current) {
       console.warn("Please select a user, type a message, or ensure Socket.IO connection exists");
       return;
     }
-
+  
     const messageData = {
-      Msg: newMessage.trim(), // Corrected field name
+      Msg: newMessage.trim(),
     };
-
+  
     try {
       const response = await axios.post(`http://localhost:5500/MsgSend/${selectedUser._id}`, messageData, {
         headers: {
@@ -97,15 +96,18 @@ const MsgDiv = () => {
         },
         withCredentials: true,
       });
+  
+      // Add the sent message to the messages state with a 'fromMe' property set to true
       setMessages(prevMessages => [{ Msg: newMessage.trim(), fromMe: true }, ...prevMessages]); 
       setNewMessage("");
       socket.current.emit('typing', false); 
     } catch (error) {
       console.error('Error sending message:', error);
     }
-
+  
     socket.current.emit('sendMessage', messageData);
   };
+  
 
   const lout = async () => {
     try {
@@ -173,7 +175,6 @@ const MsgDiv = () => {
             <div className="navR">
               <div className="prop">
                 <div className="profIm">
-                  {/* Assuming you have an 'image' property for the user */}
                   {selectedUser.image}
                 </div>
                 <div className="name">

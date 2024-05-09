@@ -61,12 +61,10 @@ app.post('/Login', async (request, response) => {
         if (!Email || !Password) {
             return response.status(400).json({ message: 'Missing required fields: Email or Password' });
         }
-
         const user = await User.findOne({ Email });
         if (!user) {
             return response.status(401).json({ message: 'Invalid email or password' });
         }
-
         const isMatch = await bcrypt.compare(Password, user.Password);
         if (!isMatch) {
             return response.status(401).json({ message: 'Invalid email or password' });
@@ -109,7 +107,6 @@ app.post("/MsgSend/:id", protectRoute, async (request, response) => {
         const { Msg } = request.body;
         const { id } = request.params;
         const senderId = request.user._id;
-
         if (!Msg || !senderId) {
             return response.status(400).json({
                 error: "Both 'Msg' and 'senderId' are required fields."
@@ -123,22 +120,20 @@ app.post("/MsgSend/:id", protectRoute, async (request, response) => {
         if (!conversation) {
             conversation = await Convo.create({
                 participants: [senderId, id],
-                messages: [] // Correct the field name to 'messages'
+                messages: [] 
             });
         }
 
         const newMsg = new Msge({
             senderId,
             resId: id,
-            Msg: request.body.Msg
+            Msg: Msg 
         });
 
         await newMsg.save();
-
         conversation.messages.push(newMsg); 
         await conversation.save(); 
         io.to(id).emit('newMessage', newMsg); 
-
         return response.status(201).json({
             Msg: newMsg
         });
@@ -150,13 +145,10 @@ app.post("/MsgSend/:id", protectRoute, async (request, response) => {
     }
 });
 
-
 app.get("/recMsg/:id", protectRoute, async (request, response) => {
     try {
         const { id: userTochatId } = request.params;
         const senderId = request.user._id;
-
-        // Find conversation and populate messages
         const conversation = await Convo.findOne({
             participants: { $all: [senderId, userTochatId] }
         }).populate({
@@ -171,13 +163,18 @@ app.get("/recMsg/:id", protectRoute, async (request, response) => {
             return response.status(404).json({ error: "Conversation not found" });
         }
 
-        const messages = conversation.messages;
+        const messages = conversation.messages.map(message => ({
+            ...message.toObject(),
+            fromMe: message.senderId.equals(senderId)
+        }));
+        
         response.status(200).json({ messages });
     } catch (error) {
-        console.log(error);
+        console.error(error);
         response.status(500).json({ error: "Internal server Error" });
     }
 });
+
 
 app.get("/", protectRoute, async (request, response) => {
     try {
